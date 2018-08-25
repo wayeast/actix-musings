@@ -1,6 +1,9 @@
 extern crate actix;
+extern crate futures;
+extern crate tokio;
 
 use actix::prelude::*;
+use futures::Future;
 use std::{thread, time};
 
 struct Ping;
@@ -18,10 +21,10 @@ impl Actor for ListenerActor {
 impl Handler<Ping> for ListenerActor {
     type Result = ();
 
-    fn handle(&mut self, _: Ping, ctx: &mut Context<Self>) {
+    fn handle(&mut self, _: Ping, _: &mut Context<Self>) -> Self::Result {
         println!("Listener actor received ping");
-        //panic!("Listener panicking!!!");  // if the thread panics, supervisor also panics
-        ctx.stop();  // supervisor restarts a stopped actor, not a panicked thread
+        thread::sleep(time::Duration::from_millis(1000));
+        println!("Listener actor responding after hard work")
     }
 }
 
@@ -52,13 +55,20 @@ impl Handler<Ping> for HeartBeatActor {
 
 impl HeartBeatActor {
     fn heartbeat(&mut self, ctx: &mut Context<Self>) {
-        //self.0.do_send(Ping);
+        let resp = self.0.send(Ping);
+        tokio::spawn(
+            resp.map(|_| println!("heartbeat actor got response from listener"))
+                .map_err(|_| ())
+        );
         ctx.run_later(time::Duration::new(2, 0), |act, ctx| {
             println!("heartbeat actor heartbeat");
-            act.0.do_send(Ping);
+            // let resp = act.0.send(Ping);
+            // tokio::spawn(
+            //     resp.map(|_| println!("heartbeat actor got response from listener"))
+            //         .map_err(|_| ())
+            // );
             act.heartbeat(ctx)
         });
-        ctx.notify(Ping);
     }
 }
 
