@@ -29,7 +29,7 @@ impl Actor for HeartBeatActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Context<Self>) {
-        println!("simple actor starting");
+        println!("heartbeat actor starting");
         self.heartbeat(ctx)
     }
 }
@@ -46,7 +46,7 @@ impl HeartBeatActor {
     fn heartbeat(&mut self, ctx: &mut Context<Self>) {
         //self.0.do_send(Ping);
         ctx.run_later(time::Duration::new(2, 0), |act, ctx| {
-            println!("simple actor heartbeat");
+            println!("heartbeat actor heartbeat");
             act.0.do_send(Ping);
             act.heartbeat(ctx)
         });
@@ -54,18 +54,26 @@ impl HeartBeatActor {
     }
 }
 
+fn listen() -> Addr<ListenerActor> {
+    Arbiter::start(|_| {
+        println!("starting listener actor");
+        ListenerActor
+    })
+}
+
+fn heartbeat(listener_addr: Addr<ListenerActor>) {
+    Arbiter::start(|_| {
+        println!("starting heartbeat actor");
+        HeartBeatActor(listener_addr)
+    });
+}
+
 fn main() {
     let sys = System::new("separate sys and arbiters");
 
-    println!("running system");
-    let listener_addr = Arbiter::start(|_| {
-        println!("starting listener actor");
-        ListenerActor
-    });
-    Arbiter::start(|_| {
-        println!("starting simple actor");
-        HeartBeatActor(listener_addr)
-    });
+    let listener_addr = listen();
+    heartbeat(listener_addr);
 
+    println!("running system");
     sys.run();
 }
