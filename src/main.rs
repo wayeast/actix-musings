@@ -4,7 +4,7 @@ extern crate tokio;
 
 use actix::prelude::*;
 use futures::Future;
-use std::{thread, time};
+use std::time::Duration;
 
 struct Ping;
 
@@ -21,10 +21,12 @@ impl Actor for ListenerActor {
 impl Handler<Ping> for ListenerActor {
     type Result = ();
 
-    fn handle(&mut self, _: Ping, _: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, _: Ping, ctx: &mut Context<Self>) -> Self::Result {
         println!("Listener actor received ping");
-        thread::sleep(time::Duration::from_millis(1000));
-        println!("Listener actor responding after hard work")
+        ctx.run_later(Duration::new(1, 0), |_, _| {
+            println!("Listener actor completed some hard work offline");
+        });
+        println!("Listener actor responding immediately to heartbeat")
     }
 }
 
@@ -60,7 +62,7 @@ impl HeartBeatActor {
             resp.map(|_| println!("heartbeat actor got response from listener"))
                 .map_err(|_| ())
         );
-        ctx.run_later(time::Duration::new(2, 0), |act, ctx| {
+        ctx.run_later(Duration::new(2, 0), |act, ctx| {
             println!("heartbeat actor heartbeat");
             // let resp = act.0.send(Ping);
             // tokio::spawn(
