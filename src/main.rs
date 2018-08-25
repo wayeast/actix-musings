@@ -34,6 +34,14 @@ impl Actor for HeartBeatActor {
     }
 }
 
+impl Handler<Ping> for HeartBeatActor {
+    type Result = ();
+
+    fn handle(&mut self, _: Ping, _: &mut Context<Self>) {
+        println!("Heartbeat actor received ping")
+    }
+}
+
 impl HeartBeatActor {
     fn heartbeat(&mut self, ctx: &mut Context<Self>) {
         //self.0.do_send(Ping);
@@ -42,6 +50,7 @@ impl HeartBeatActor {
             act.0.do_send(Ping);
             act.heartbeat(ctx)
         });
+        ctx.notify(Ping);
     }
 }
 
