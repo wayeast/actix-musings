@@ -55,15 +55,17 @@ impl HeartBeatActor {
 }
 
 fn main() {
-    actix::System::run(|| {
-        println!("running system");
-        let listener_addr = Arbiter::start(|_| {
-            println!("starting listener actor");
-            ListenerActor
-        });
-        Arbiter::start(|_| {
-            println!("starting simple actor");
-            HeartBeatActor(listener_addr)
-        });
+    let sys = System::new("separate sys and arbiters");
+
+    println!("running system");
+    let listener_addr = Arbiter::start(|_| {
+        println!("starting listener actor");
+        ListenerActor
     });
+    Arbiter::start(|_| {
+        println!("starting simple actor");
+        HeartBeatActor(listener_addr)
+    });
+
+    sys.run();
 }
