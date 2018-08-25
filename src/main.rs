@@ -18,9 +18,16 @@ impl Actor for ListenerActor {
 impl Handler<Ping> for ListenerActor {
     type Result = ();
 
-    fn handle(&mut self, _: Ping, _: &mut Context<Self>) {
+    fn handle(&mut self, _: Ping, ctx: &mut Context<Self>) {
         println!("Listener actor received ping");
-        panic!("Listener panicking!!!");
+        //panic!("Listener panicking!!!");  // if the thread panics, supervisor also panics
+        ctx.stop();  // supervisor restarts a stopped actor, not a panicked thread
+    }
+}
+
+impl Supervised for ListenerActor {
+    fn restarting(&mut self, _: &mut Context<ListenerActor>) {
+        println!("listener actor restarting");
     }
 }
 
@@ -56,7 +63,7 @@ impl HeartBeatActor {
 }
 
 fn listen() -> Addr<ListenerActor> {
-    Arbiter::start(|_| {
+    Supervisor::start(|_| {
         println!("starting listener actor");
         ListenerActor
     })
