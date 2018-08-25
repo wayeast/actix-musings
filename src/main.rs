@@ -19,7 +19,8 @@ impl Handler<Ping> for ListenerActor {
     type Result = ();
 
     fn handle(&mut self, _: Ping, _: &mut Context<Self>) {
-        println!("Listener actor received ping")
+        println!("Listener actor received ping");
+        panic!("Listener panicking!!!");
     }
 }
 
