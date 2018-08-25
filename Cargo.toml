@@ -1,0 +1,9 @@
+[package]
+name = "runspawn"
+version = "0.1.0"
+authors = ["Huston Bokinsky <huston@deepgram.com>"]
+
+[dependencies]
+actix = "0.7.3"
+futures = "0.1.23"
+tokio-timer = "0.2.6"
