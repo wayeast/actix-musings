@@ -1,12 +1,13 @@
 extern crate actix;
+extern crate futures;
 
 use actix::prelude::*;
-use std::{thread, time};
+use std::time;
 
 struct Ping;
 
 impl Message for Ping {
-    type Result = ();
+    type Result = bool;
 }
 
 struct ListenerActor;
@@ -16,10 +17,11 @@ impl Actor for ListenerActor {
 }
 
 impl Handler<Ping> for ListenerActor {
-    type Result = ();
+    type Result = bool;
 
-    fn handle(&mut self, _: Ping, _: &mut Context<Self>) {
-        println!("Listener actor received ping")
+    fn handle(&mut self, _: Ping, _: &mut Context<Self>) -> Self::Result {
+        println!("Listener actor received ping");
+        true
     }
 }
 
@@ -57,4 +59,24 @@ fn main() {
             HeartBeatActor(listener_addr)
         });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ListenerActor, Ping};
+    use actix::run;
+    use actix::prelude::*;
+    use futures::prelude::*;
+
+    #[test]
+    fn it_works() {
+        let addr = ListenerActor {}.start();
+        let res = addr.send(Ping);
+        run(|| {
+            res.map(|r| {
+                assert_eq!(r, true);
+                System::current().stop();
+            }).map_err(|_| ())
+        });
+    }
 }
